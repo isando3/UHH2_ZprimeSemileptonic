@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE JobConfiguration PUBLIC "" "JobConfig.dtd"[
-
-<!ENTITY ZP1000w10 SYSTEM "../../common/datasets/MC_Zp_TTJets_M1000w10_20x25.xml">
+<!DOCTYPE JobConfiguration PUBLIC "" "JobConfig.dtd"
+[
+<!ENTITY ZP1000w10 SYSTEM "/nfs/dust/cms/user/dansand/UHH2/CMSSW_7_2_1_patch4/src/UHH2/common/datasets/MC_Zp_TTJets_M1000W10_20x25.xml">
 <!ENTITY ZP2000w20 SYSTEM "../../common/datasets/MC_Zp_TTJets_M2000w20_20x25.xml">
 <!ENTITY ZP3000w30 SYSTEM "../../common/datasets/MC_Zp_TTJets_M3000w30_20x25.xml">
 <!ENTITY ZP1000w100 SYSTEM "../../common/datasets/MC_Zp_TTJets_M1000w100_20x25.xml">
@@ -22,7 +22,7 @@
     <Library Name="libSUHH2ZprimeSemiLeptonic"/>
     <Package Name="SUHH2ZprimeSemiLeptonic.par" />
 
-    <Cycle Name="uhh2::AnalysisModuleRunner" OutputDirectory="/nfs/dust/cms/user/kripav/AnalysisOutput/UHH2/PreSelection/Muon/" PostFix="" TargetLumi="1" >
+    <Cycle Name="uhh2::AnalysisModuleRunner" OutputDirectory="/nfs/dust/cms/user/dansand/UHH2/CMSSW_7_2_1_patch4/src/UHH2/ZprimeSemiLeptonic/" PostFix="" TargetLumi="1" >
       <!-- <Cycle Name="ZprimePreSelection"  RunMode="PROOF" ProofServer="lite://"  ProofWorkDir="/nfs/dust/cms/user/ottjoc/proof-wd/" ProofNodes="2" OutputDirectory="./" PostFix="" TargetLumi="1" >  -->
 
 
@@ -145,7 +145,7 @@
             
             <!-- the class name of the AnalysisModule subclasses to run: -->
             <Item Name="AnalysisModule" Value="ZprimePreSelectionModule" /> 
-            
+            <Item Name='ElectronOrMuon' Value="Electron" /> 
             <!-- Some test configuration; see ZprimePreSelectionModule.cxx for how to access it: -->
             <!--<Item Name="TestKey" Value="TestKeyValue" /> -->
         </UserConfig>
