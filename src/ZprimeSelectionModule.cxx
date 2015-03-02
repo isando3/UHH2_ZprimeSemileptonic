@@ -24,7 +24,7 @@
 #include "UHH2/common/include/TTbarReconstruction.h"
 #include "UHH2/common/include/ReconstructionHypothesisDiscriminators.h"
 #include "UHH2/common/include/HypothesisHists.h"
-
+#include "UHH2/common/include/TriggerSelection.h"
 
 using namespace std;
 using namespace uhh2;
@@ -46,22 +46,36 @@ private:
 
   std::vector<std::unique_ptr<AnalysisModule>> recomodules;
   std::vector<std::unique_ptr<AnalysisModule>> pre_modules;
-    
+  int m_Nbtags_min; 
     // declare the Selections to use. 
-  std::unique_ptr<Selection> nele_sel, nmu_sel, njet_sel, twodcut, htlepcut, metcut, ntopjet_sel, cmstoptagoverlap_sel;
+  std::unique_ptr<Selection> nele_sel, nmu_sel, njet_sel, twodcut, htlepcut, metcut, ntopjet_sel, cmstoptagoverlap_sel, ele_Trigger, mu_Trigger;
   // add later: npv_sel, etc.
- 
+   
     // store the Hists collection as member variables.
   std::unique_ptr<Hists> h_hyphists, h_event, h_jet, h_ele, h_mu, h_tau, h_topjet;
   uhh2::Event::Handle<std::vector<ReconstructionHypothesis>> h_hyps;
+   
 };
 
 ZprimeSelectionModule::ZprimeSelectionModule(Context & ctx){
    
   jet_kinematic = PtEtaCut(150.0, 2.5);
   topjetid = CMSTopTag();
-
+  //0. Set up lepton flag 
+    bool doEle=false;
+    bool doMu=false;
+    string testvalue = ctx.get("ElectronOrMuon");
+    if(testvalue=="Electron"){
+     doEle=true;
+    }
+    else if (testvalue=="Muon"){
+     doMu=true;
+    }
+    else{
+      cout << "The only valid options are: Electron or Muon" << endl;
+    }
     // 1. setup other modules (CommonModules,JetCleaner, etc.):
+  cout << "We are running in the  " << testvalue << "channel" << endl;
   jetcleaner.reset(new JetCleaner(25.0,std::numeric_limits<double>::infinity())); 
   muoncleaner.reset(new MuonCleaner(AndId<Muon>(MuonIDTight(),PtEtaCut(45.0, 2.1))));
   electroncleaner.reset(new ElectronCleaner(AndId<Electron>(ElectronID_PHYS14_25ns_medium, PtEtaCut(35.0, 2.5))));
@@ -70,9 +84,16 @@ ZprimeSelectionModule::ZprimeSelectionModule(Context & ctx){
   pre_modules.push_back(std::unique_ptr<AnalysisModule>(new HTlepCalculator(ctx)));
    
     // 2. set up selections
-    // For Muons only:
-  nele_sel.reset(new NElectronSelection(0,0)); //no electrons
-  nmu_sel.reset(new NMuonSelection(1,1)); // exactly one muon
+  if(doEle){
+    nele_sel.reset(new NElectronSelection(1,1)); //exactly one electron
+    nmu_sel.reset(new NMuonSelection(0,0)); // no muons
+    ele_Trigger.reset(new TriggerSelection("HLT_Ele45_CaloIdVT_GsfTrkIdT_PFJet200_PFJet50_v*")); //selecting the ele+jets trigger
+  }
+  if(doMu){
+    nele_sel.reset(new NElectronSelection(0,0)); //no electron
+    nmu_sel.reset(new NMuonSelection(1,1)); // exactly one muon
+    mu_Trigger.reset(new TriggerSelection("HLT_Mu40_eta2p1_PFJet200_PFJet50_v*")); // selecting the mu+jets trigger
+  }
   twodcut.reset(new TwoDCut()); 
   njet_sel.reset(new NJetSelection(1, -1,jet_kinematic)); // at least 2 jets with pt 150 and eta 2.5
   htlepcut.reset(new HTlepCut(ctx,150,std::numeric_limits<double>::infinity()));
@@ -125,6 +146,8 @@ bool ZprimeSelectionModule::process(Event & event) {
   bool nele_selection = nele_sel->passes(event);
   bool nmu_selection = nmu_sel->passes(event);
   bool njet_selection = njet_sel->passes(event);
+  bool ele_Trigger_selection = ele_Trigger->passes(event);
+  bool mu_Trigger_selection = mu_Trigger->passes(event); 
   bool twodcut_selection = twodcut->passes(event);
   bool htlepcut_selection = htlepcut->passes(event);
   bool metcut_selection = metcut->passes(event);
@@ -133,7 +156,7 @@ bool ZprimeSelectionModule::process(Event & event) {
   
 
   //if(nele_selection && nmu_selection && njet_selection && twodcut_selection && htlepcut_selection && metcut_selection && ntopjet_selection && cmstoptagoverlap_selection){
-if(nele_selection && nmu_selection && njet_selection && twodcut_selection && htlepcut_selection && metcut_selection && ntopjet_selection && cmstoptagoverlap_selection){
+if(nele_selection && nmu_selection && njet_selection && ele_Trigger_selection  && mu_Trigger_selection && twodcut_selection && htlepcut_selection && metcut_selection && ntopjet_selection && cmstoptagoverlap_selection){
     for(auto & m : recomodules){
         m->process(event);
       }
@@ -148,7 +171,7 @@ if(nele_selection && nmu_selection && njet_selection && twodcut_selection && htl
   }
 
   // 3. decide whether or not to keep the current event in the output:
-  return  nele_selection && nmu_selection && njet_selection && twodcut_selection && htlepcut_selection && metcut_selection && ntopjet_selection && cmstoptagoverlap_selection;
+  return  nele_selection && nmu_selection && njet_selection && ele_Trigger_selection  && mu_Trigger_selection && twodcut_selection && htlepcut_selection && metcut_selection && ntopjet_selection && cmstoptagoverlap_selection;
 
 }
   
