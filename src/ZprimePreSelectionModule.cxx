@@ -67,22 +67,52 @@ ZprimePreSelectionModule::ZprimePreSelectionModule(Context & ctx){
     // for(auto & kv : ctx.get_all()){
     // cout << " " << kv.first << " = " << kv.second << endl;
     //}
-
+    //0. Set up the electron or muon flag 
+    bool doEle=false;
+    bool doMu=false;
+    bool doBoth=false;
+    string testvalue = ctx.get("ElectronOrMuon");
+    if(testvalue=="Electron"){
+     doEle=true;
+    }
+    else if (testvalue=="Muon"){
+     doMu=true;
+    }
+    else if (testvalue=="Both"){
+      doBoth=true;
+    }
+    else{
+      cout << "The only valid options are: Electron, Muon or Both" << endl;
+    }
+  
+ 
+   
+   
     // 1. setup other modules (CommonModules,JetCleaner, etc.):
   jetcorrector.reset(new JetCorrector(JERFiles::PHYS14_L123_MC));
 
   muoncleaner.reset(new MuonCleaner(AndId<Muon>(MuonIDTight(),PtEtaCut(45.0, 2.1))));
-  electroncleaner.reset(new ElectronCleaner(AndId<Electron>(ElectronID_PHYS14_25ns_tight, PtEtaCut(35.0, 2.5))));
+  electroncleaner.reset(new ElectronCleaner(AndId<Electron>(ElectronID_PHYS14_25ns_tight, PtEtaCut(50.0, 2.5))));
   jetleptoncleaner.reset(new JetLeptonCleaner(JERFiles::PHYS14_L123_MC));
   jetresolutionsmearer.reset(new JetResolutionSmearer(ctx));
   jetcleaner.reset(new JetCleaner(30.0, 2.5)); 
   
     // 2. set up selections
-    // For Muons only:
+  if(doMu){
     nele_sel.reset(new NElectronSelection(0,0)); //no electrons
     nmu_sel.reset(new NMuonSelection(1)); // at least one muon
     njet_sel.reset(new NJetSelection(2)); // at least 2 jets
-
+   }
+  if(doEle){
+    nele_sel.reset(new NElectronSelection(1)); //at least one electron
+    nmu_sel.reset(new NMuonSelection(0,0)); // no muons
+    njet_sel.reset(new NJetSelection(2)); // at least 2 jets
+   }
+  if(doBoth){
+    nele_sel.reset(new NElectronSelection(1)); //at least one electron
+    nmu_sel.reset(new NMuonSelection(1)); // at least one muon 
+    njet_sel.reset(new NJetSelection(2)); // at least 2 jets
+  }
     // 3. Set up Hists classes:
     
     h_event.reset(new EventHists(ctx, "Event_before_Presel"));
